@@ -1,7 +1,7 @@
 # ST5004CEM — Operating Systems and Security
 
-**Student:** [Your Name]
-**Student ID:** [Your Student ID]
+**Student:** [Manjil Basnet]
+**Student ID:** [240623]
 **Module:** ST5004CEM — Operating Systems and Security
 **College:** Softwarica College of IT & E-Commerce
 **Language:** C
