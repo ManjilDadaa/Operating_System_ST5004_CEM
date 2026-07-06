@@ -39,3 +39,41 @@
 #define PERM_OWNER_X  0100
 #define PERM_OTHER_R  0004
 #define PERM_OTHER_W  0002
+
+/* ─────────────────────────────────────────────────
+   STRUCTS
+───────────────────────────────────────────────── */
+typedef struct {
+    char username[MAX_NAME];
+    char password_hash[MAX_PASS];
+    int  is_owner;
+} User;
+
+/* ─────────────────────────────────────────────────
+   SESSION
+───────────────────────────────────────────────── */
+User current_user;
+int  logged_in = 0;
+
+/* ─────────────────────────────────────────────────
+   HELPERS
+───────────────────────────────────────────────── */
+
+/* Read a line from stdin, strip newline */
+void input(const char *prompt, char *buf, int size) {
+    printf("%s", prompt);
+    fflush(stdout);
+    if (fgets(buf, size, stdin))
+        buf[strcspn(buf, "\n")] = '\0';
+}
+
+/* Read password without echo */
+void input_password(const char *prompt, char *buf, int size) {
+    printf("%s", prompt);
+    fflush(stdout);
+    system("stty -echo");
+    if (fgets(buf, size, stdin))
+        buf[strcspn(buf, "\n")] = '\0';
+    system("stty echo");
+    printf("\n");
+}
