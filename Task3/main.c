@@ -77,3 +77,38 @@ void input_password(const char *prompt, char *buf, int size) {
     system("stty echo");
     printf("\n");
 }
+
+void divider(void) {
+    printf("============================================================\n");
+}
+
+void header(const char *title) {
+    printf("\n");
+    divider();
+    printf("  %s\n", title);
+    divider();
+    printf("\n");
+}
+
+/* Permission guide — shown wherever user picks permissions */
+void print_perm_guide(void) {
+    printf("  Permission Guide:\n");
+    printf("    600  =  only you can read and write             (rw-------)\n");
+    printf("    640  =  you can read/write, group can read      (rw-r-----)\n");
+    printf("    644  =  you can read/write, everyone can read   (rw-r--r--)\n");
+    printf("    700  =  only you can read, write and execute    (rwx------)\n");
+    printf("    777  =  everyone can read, write and execute    (rwxrwxrwx)\n");
+    printf("\n");
+}
+
+/* ─────────────────────────────────────────────────
+   PASSWORD HASH
+   XOR each byte with XOR_KEY, store as hex string.
+   Passwords are never saved in plaintext.
+───────────────────────────────────────────────── */
+void hash_password(const char *pw, char *out) {
+    int len = strlen(pw);
+    for (int i = 0; i < len; i++)
+        sprintf(out + i * 2, "%02x", (unsigned char)(pw[i] ^ XOR_KEY));
+    out[len * 2] = '\0';
+}
