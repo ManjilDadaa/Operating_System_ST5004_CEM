@@ -159,3 +159,40 @@ void save_users(User *users, int count) {
                 users[i].is_owner);
     fclose(f);
 }
+
+/* ─────────────────────────────────────────────────
+   PERMISSION HELPERS
+───────────────────────────────────────────────── */
+void meta_path(const char *filename, char *out) {
+    snprintf(out, 256, "%s/.%s.meta", FILES_DIR, filename);
+}
+
+void write_meta(const char *filename, const char *owner, int perm) {
+    char mp[256]; meta_path(filename, mp);
+    FILE *f = fopen(mp, "w");
+    if (!f) return;
+    fprintf(f, "%s %o\n", owner, perm);
+    fclose(f);
+}
+
+int read_meta(const char *filename, char *owner, int *perm) {
+    char mp[256]; meta_path(filename, mp);
+    FILE *f = fopen(mp, "r");
+    if (!f) return 0;
+    fscanf(f, "%31s %o", owner, perm);
+    fclose(f);
+    return 1;
+}
+
+void perm_to_str(int perm, char *out) {
+    out[0] = (perm & PERM_OWNER_R) ? 'r' : '-';
+    out[1] = (perm & PERM_OWNER_W) ? 'w' : '-';
+    out[2] = (perm & PERM_OWNER_X) ? 'x' : '-';
+    out[3] = (perm & 0040)         ? 'r' : '-';
+    out[4] = (perm & 0020)         ? 'w' : '-';
+    out[5] = (perm & 0010)         ? 'x' : '-';
+    out[6] = (perm & PERM_OTHER_R) ? 'r' : '-';
+    out[7] = (perm & PERM_OTHER_W) ? 'w' : '-';
+    out[8] = (perm & 0001)         ? 'x' : '-';
+    out[9] = '\0';
+}
