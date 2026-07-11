@@ -131,3 +131,31 @@ void audit(const char *action, const char *file) {
             file ? file : "-");
     fclose(f);
 }
+
+/* ─────────────────────────────────────────────────
+   USER DB HELPERS
+───────────────────────────────────────────────── */
+int load_users(User *users, int *count) {
+    FILE *f = fopen(USER_DB, "r");
+    if (!f) { *count = 0; return 0; }
+    *count = 0;
+    while (*count < MAX_USERS &&
+           fscanf(f, "%31s %63s %d",
+                  users[*count].username,
+                  users[*count].password_hash,
+                  &users[*count].is_owner) == 3)
+        (*count)++;
+    fclose(f);
+    return 1;
+}
+
+void save_users(User *users, int count) {
+    FILE *f = fopen(USER_DB, "w");
+    if (!f) return;
+    for (int i = 0; i < count; i++)
+        fprintf(f, "%s %s %d\n",
+                users[i].username,
+                users[i].password_hash,
+                users[i].is_owner);
+    fclose(f);
+}
