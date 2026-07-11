@@ -112,3 +112,22 @@ void hash_password(const char *pw, char *out) {
         sprintf(out + i * 2, "%02x", (unsigned char)(pw[i] ^ XOR_KEY));
     out[len * 2] = '\0';
 }
+
+/* ─────────────────────────────────────────────────
+   AUDIT LOG
+   Every action is recorded with timestamp, user,
+   action type, and filename.
+───────────────────────────────────────────────── */
+void audit(const char *action, const char *file) {
+    FILE *f = fopen(AUDIT_LOG, "a");
+    if (!f) return;
+    time_t now = time(NULL);
+    char ts[32];
+    strftime(ts, sizeof(ts), "%Y-%m-%d %H:%M:%S", localtime(&now));
+    fprintf(f, "[%s] USER=%-14s ACTION=%-14s FILE=%s\n",
+            ts,
+            logged_in ? current_user.username : "anonymous",
+            action,
+            file ? file : "-");
+    fclose(f);
+}
