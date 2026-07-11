@@ -196,3 +196,48 @@ void perm_to_str(int perm, char *out) {
     out[8] = (perm & 0001)         ? 'x' : '-';
     out[9] = '\0';
 }
+
+/*
+ * check_permission
+ * Owner gets owner bits. Everyone else gets others bits.
+ * Prints "Checking Permission..." and result — matches
+ * the style shown in the assignment screenshot.
+ */
+int check_permission(const char *filename, int owner_bit, int other_bit) {
+    if (!logged_in) { printf(RED "  Not logged in.\n" RESET); return 0; }
+    char owner[MAX_NAME]; int perm = 0;
+    if (!read_meta(filename, owner, &perm)) {
+        printf(RED "  File '%s' not found or has no metadata.\n" RESET, filename);
+        return 0;
+    }
+    printf("Checking Permission...\n");
+    int allowed = (strcmp(owner, current_user.username) == 0)
+                  ? (perm & owner_bit) : (perm & other_bit);
+    if (allowed) { printf(GREEN "Permission Granted.\n\n" RESET); return 1; }
+    else         { printf(RED   "Permission Denied.\n\n"  RESET); return 0; }
+}
+
+/* file path helper */
+void file_path(const char *filename, char *out) {
+    snprintf(out, 256, "%s/%s", FILES_DIR, filename);
+}
+
+/* ─────────────────────────────────────────────────
+   XOR ENCRYPT / DECRYPT
+   Same function encrypts and decrypts — XOR is
+   symmetric: plaintext XOR key = ciphertext,
+               ciphertext XOR key = plaintext.
+───────────────────────────────────────────────── */
+void xor_crypt(const char *in_path, const char *out_path) {
+    FILE *in  = fopen(in_path,  "rb");
+    FILE *out = fopen(out_path, "wb");
+    if (!in || !out) {
+        printf(RED "  Error: cannot open file for encryption.\n" RESET);
+        if (in)  fclose(in);
+        if (out) fclose(out);
+        return;
+    }
+    int c;
+    while ((c = fgetc(in)) != EOF) fputc(c ^ XOR_KEY, out);
+    fclose(in); fclose(out);
+}
