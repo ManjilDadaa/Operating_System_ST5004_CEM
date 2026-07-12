@@ -241,3 +241,69 @@ void xor_crypt(const char *in_path, const char *out_path) {
     while ((c = fgetc(in)) != EOF) fputc(c ^ XOR_KEY, out);
     fclose(in); fclose(out);
 }
+
+/* ─────────────────────────────────────────────────
+   AUTH SCREENS
+───────────────────────────────────────────────── */
+void screen_register(void) {
+    header("REGISTER NEW USER");
+    char uname[MAX_NAME], pw[MAX_PASS], confirm[MAX_PASS];
+
+    input("Enter Username  : ", uname, sizeof(uname));
+    input_password("Enter Password  : ", pw, sizeof(pw));
+    input_password("Confirm Password: ", confirm, sizeof(confirm));
+
+    if (strcmp(pw, confirm) != 0) {
+        printf(RED "\n  Passwords do not match. Try again.\n" RESET);
+        return;
+    }
+
+    User users[MAX_USERS]; int count = 0;
+    load_users(users, &count);
+
+    for (int i = 0; i < count; i++)
+        if (strcmp(users[i].username, uname) == 0) {
+            printf(RED "\n  Username '%s' already exists.\n" RESET, uname);
+            return;
+        }
+
+    if (count >= MAX_USERS) {
+        printf(RED "\n  User limit reached.\n" RESET); return;
+    }
+
+    strncpy(users[count].username, uname, MAX_NAME - 1);
+    hash_password(pw, users[count].password_hash);
+    users[count].is_owner = (count == 0) ? 1 : 0; /* first user = owner */
+    count++;
+    save_users(users, count);
+
+    printf(GREEN "\n  Registration Successful! You can now log in.\n" RESET);
+    audit("REGISTER", uname);
+}
+
+int screen_login(void) {
+    header("LOGIN");
+    char uname[MAX_NAME], pw[MAX_PASS];
+
+    input("Enter Username: ", uname, sizeof(uname));
+    input_password("Enter Password: ", pw, sizeof(pw));
+
+    User users[MAX_USERS]; int count = 0;
+    load_users(users, &count);
+    char hashed[MAX_PASS];
+    hash_password(pw, hashed);
+
+    for (int i = 0; i < count; i++) {
+        if (strcmp(users[i].username, uname) == 0 &&
+            strcmp(users[i].password_hash, hashed) == 0) {
+            current_user = users[i];
+            logged_in = 1;
+            printf(GREEN "\n  Login Successful. Welcome, %s!\n" RESET, uname);
+            audit("LOGIN", NULL);
+            return 1;
+        }
+    }
+    printf(RED "\n  Login Failed: invalid username or password.\n" RESET);
+    audit("LOGIN_FAIL", uname);
+    return 0;
+}
