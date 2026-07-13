@@ -307,3 +307,90 @@ int screen_login(void) {
     audit("LOGIN_FAIL", uname);
     return 0;
 }
+
+/* ─────────────────────────────────────────────────
+   FILE OPERATION SCREENS
+───────────────────────────────────────────────── */
+
+/* CREATE */
+void screen_create(void) {
+    header("CREATE FILE");
+    char fname[MAX_NAME], content[MAX_INPUT], perm_input[8];
+
+    input("Enter Filename : ", fname, sizeof(fname));
+
+    char fp[256]; file_path(fname, fp);
+    if (access(fp, F_OK) == 0) {
+        printf(RED "\n  A file with that name already exists.\n" RESET);
+        return;
+    }
+
+    input("Enter Content  : ", content, sizeof(content));
+
+    printf("\n");
+    print_perm_guide();
+    input("Enter Permissions [default 640]: ", perm_input, sizeof(perm_input));
+
+    int perm = 0640; /* default — owner rw, group r, others none */
+    if (strlen(perm_input) > 0)
+        perm = (int)strtol(perm_input, NULL, 8);
+
+    FILE *f = fopen(fp, "w");
+    if (!f) { printf(RED "\n  Error: cannot create file.\n" RESET); return; }
+    fprintf(f, "%s\n", content);
+    fclose(f);
+
+    write_meta(fname, current_user.username, perm);
+
+    char pstr[10]; perm_to_str(perm, pstr);
+    printf(GREEN "\n  File Created Successfully.\n" RESET);
+    printf(DIM   "  Permissions : %s  (%o)\n" RESET, pstr, perm);
+    printf(DIM   "  Owner       : %s\n" RESET, current_user.username);
+    audit("CREATE", fname);
+}
+
+/* READ */
+void screen_read(void) {
+    header("READ FILE");
+    char fname[MAX_NAME];
+    input("Enter Filename: ", fname, sizeof(fname));
+    printf("\n");
+
+    if (!check_permission(fname, PERM_OWNER_R, PERM_OTHER_R)) {
+        audit("READ_DENIED", fname); return;
+    }
+
+    char fp[256]; file_path(fname, fp);
+    FILE *f = fopen(fp, "r");
+    if (!f) { printf(RED "  File not found.\n" RESET); return; }
+
+    printf(CYAN "── Contents of '%s' ──\n" RESET, fname);
+    int c; while ((c = fgetc(f)) != EOF) putchar(c);
+    printf(CYAN "────────────────────────\n" RESET);
+    fclose(f);
+    audit("READ", fname);
+}
+
+/* WRITE */
+void screen_write(void) {
+    header("WRITE TO FILE");
+    char fname[MAX_NAME];
+    input("Enter Filename: ", fname, sizeof(fname));
+    printf("\n");
+
+    if (!check_permission(fname, PERM_OWNER_W, PERM_OTHER_W)) {
+        audit("WRITE_DENIED", fname); return;
+    }
+
+    char content[MAX_INPUT];
+    input("Enter text: ", content, sizeof(content));
+
+    char fp[256]; file_path(fname, fp);
+    FILE *f = fopen(fp, "a");
+    if (!f) { printf(RED "\n  Error opening file.\n" RESET); return; }
+    fprintf(f, "%s\n", content);
+    fclose(f);
+
+    printf(GREEN "\n  Saved Successfully.\n" RESET);
+    audit("WRITE", fname);
+}
