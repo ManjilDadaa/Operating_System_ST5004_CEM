@@ -458,3 +458,55 @@ void screen_permissions(void) {
     printf(GREEN "\n  Permissions updated to %s (%o)\n" RESET, pstr, new_perm);
     audit("CHMOD", fname);
 }
+
+/* ENCRYPT */
+void screen_encrypt(void) {
+    header("ENCRYPT FILE");
+    char fname[MAX_NAME];
+    input("Enter Filename to encrypt: ", fname, sizeof(fname));
+    printf("\n");
+
+    if (!check_permission(fname, PERM_OWNER_R, PERM_OTHER_R)) {
+        audit("ENCRYPT_DENIED", fname); return;
+    }
+
+    char fp[256], enc_name[256], enc_fp[256];
+    file_path(fname, fp);
+    snprintf(enc_name, sizeof(enc_name), "%s.enc", fname);
+    file_path(enc_name, enc_fp);
+
+    xor_crypt(fp, enc_fp);
+    write_meta(enc_name, current_user.username, 0600);
+
+    printf(GREEN "  Encrypted  : '%s'\n" RESET, fname);
+    printf(GREEN "  Saved as   : '%s'\n" RESET, enc_name);
+    printf(DIM   "  Permissions set to 600 (owner read/write only)\n" RESET);
+    audit("ENCRYPT", fname);
+}
+
+/* DECRYPT */
+void screen_decrypt(void) {
+    header("DECRYPT FILE");
+    char fname[MAX_NAME];
+    input("Enter Filename to decrypt (.enc file): ", fname, sizeof(fname));
+    printf("\n");
+
+    if (!check_permission(fname, PERM_OWNER_R, PERM_OTHER_R)) {
+        audit("DECRYPT_DENIED", fname); return;
+    }
+
+    char fp[256], dec_name[256], dec_fp[256];
+    file_path(fname, fp);
+    strncpy(dec_name, fname, sizeof(dec_name));
+    char *dot = strstr(dec_name, ".enc");
+    if (dot) *dot = '\0';
+    strcat(dec_name, ".dec");
+    file_path(dec_name, dec_fp);
+
+    xor_crypt(fp, dec_fp);
+    write_meta(dec_name, current_user.username, 0600);
+
+    printf(GREEN "  Decrypted  : '%s'\n" RESET, fname);
+    printf(GREEN "  Saved as   : '%s'\n" RESET, dec_name);
+    audit("DECRYPT", fname);
+}
