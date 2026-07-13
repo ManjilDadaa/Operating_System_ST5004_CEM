@@ -394,3 +394,67 @@ void screen_write(void) {
     printf(GREEN "\n  Saved Successfully.\n" RESET);
     audit("WRITE", fname);
 }
+
+/* DELETE */
+void screen_delete(void) {
+    header("DELETE FILE");
+    char fname[MAX_NAME];
+    input("Enter Filename: ", fname, sizeof(fname));
+    printf("\n");
+
+    if (!check_permission(fname, PERM_OWNER_W, PERM_OTHER_W)) {
+        audit("DELETE_DENIED", fname); return;
+    }
+
+    char confirm[4];
+    input("Are you sure? (Y/N): ", confirm, sizeof(confirm));
+    if (confirm[0] != 'Y' && confirm[0] != 'y') {
+        printf(YELLOW "\n  Cancelled.\n" RESET); return;
+    }
+
+    char fp[256], mp[256];
+    file_path(fname, fp); meta_path(fname, mp);
+    remove(fp); remove(mp);
+
+    printf(GREEN "\n  Deleted Successfully.\n" RESET);
+    audit("DELETE", fname);
+}
+
+/* FILE PERMISSIONS — view and change */
+void screen_permissions(void) {
+    header("FILE PERMISSIONS");
+    char fname[MAX_NAME];
+    input("Enter Filename: ", fname, sizeof(fname));
+
+    char owner[MAX_NAME]; int perm = 0;
+    if (!read_meta(fname, owner, &perm)) {
+        printf(RED "\n  File not found or has no metadata.\n" RESET); return;
+    }
+
+    char pstr[10]; perm_to_str(perm, pstr);
+    printf("\n");
+    printf("  File        : %s\n", fname);
+    printf("  Owner       : %s\n", owner);
+    printf("  Permissions : %s  (%o)\n\n", pstr, perm);
+
+    /* only owner can change permissions */
+    if (strcmp(owner, current_user.username) != 0) {
+        printf(DIM "  Only the owner can change permissions.\n" RESET); return;
+    }
+
+    char choice[4];
+    input("Change permissions? (Y/N): ", choice, sizeof(choice));
+    if (choice[0] != 'Y' && choice[0] != 'y') return;
+
+    printf("\n");
+    print_perm_guide();
+
+    char perm_input[8];
+    input("New Permissions: ", perm_input, sizeof(perm_input));
+    int new_perm = (int)strtol(perm_input, NULL, 8);
+    write_meta(fname, owner, new_perm);
+
+    perm_to_str(new_perm, pstr);
+    printf(GREEN "\n  Permissions updated to %s (%o)\n" RESET, pstr, new_perm);
+    audit("CHMOD", fname);
+}
