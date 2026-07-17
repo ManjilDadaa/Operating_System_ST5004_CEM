@@ -510,3 +510,116 @@ void screen_decrypt(void) {
     printf(GREEN "  Saved as   : '%s'\n" RESET, dec_name);
     audit("DECRYPT", fname);
 }
+
+* LIST FILES */
+void screen_list(void) {
+    header("ALL FILES");
+    printf("  %-28s %-12s %s\n", "Filename", "Permissions", "Owner");
+    divider();
+
+    char cmd[256];
+    snprintf(cmd, sizeof(cmd), "ls -1 %s/ 2>/dev/null", FILES_DIR);
+    FILE *p = popen(cmd, "r");
+    if (!p) { printf(DIM "  (no files)\n" RESET); return; }
+
+    char fname[256]; int found = 0;
+    while (fgets(fname, sizeof(fname), p)) {
+        fname[strcspn(fname, "\n")] = 0;
+        if (fname[0] == '.') continue; /* skip .meta files */
+        char owner[MAX_NAME]; int perm = 0; char pstr[10];
+        if (read_meta(fname, owner, &perm)) perm_to_str(perm, pstr);
+        else { strcpy(pstr, "---------"); strcpy(owner, "unknown"); }
+        printf("  %-28s %-12s %s\n", fname, pstr, owner);
+        found = 1;
+    }
+    pclose(p);
+    if (!found) printf(DIM "  (no files yet)\n" RESET);
+    printf("\n");
+}
+
+/* AUDIT LOG */
+void screen_audit(void) {
+    header("AUDIT LOG");
+    FILE *f = fopen(AUDIT_LOG, "r");
+    if (!f) { printf(DIM "  (no entries yet)\n" RESET); return; }
+    char line[256];
+    while (fgets(line, sizeof(line), f)) printf("  %s", line);
+    fclose(f);
+    printf("\n");
+}
+
+/* ─────────────────────────────────────────────────
+   MENUS
+───────────────────────────────────────────────── */
+void main_menu(void) {
+    char choice[4];
+    while (1) {
+        printf("\n");
+        divider();
+        printf("                     MAIN MENU\n");
+        divider();
+        printf("\n");
+        printf("  1. Create File\n");
+        printf("  2. Read File\n");
+        printf("  3. Write File\n");
+        printf("  4. Delete File\n");
+        printf("  5. File Permissions\n");
+        printf("  6. Encrypt File\n");
+        printf("  7. Decrypt File\n");
+        printf("  8. List All Files\n");
+        printf("  9. View Audit Log\n");
+        printf("  0. Logout\n");
+        printf("\n");
+        input("Enter Choice: ", choice, sizeof(choice));
+
+        switch (choice[0]) {
+            case '1': screen_create();      break;
+            case '2': screen_read();        break;
+            case '3': screen_write();       break;
+            case '4': screen_delete();      break;
+            case '5': screen_permissions(); break;
+            case '6': screen_encrypt();     break;
+            case '7': screen_decrypt();     break;
+            case '8': screen_list();        break;
+            case '9': screen_audit();       break;
+            case '0':
+                audit("LOGOUT", NULL);
+                printf(YELLOW "\n  Logged out: %s\n" RESET, current_user.username);
+                logged_in = 0;
+                memset(&current_user, 0, sizeof(current_user));
+                return;
+            default:
+                printf(RED "\n  Invalid choice. Try again.\n" RESET);
+        }
+    }
+}
+
+void auth_menu(void) {
+    char choice[4];
+    while (1) {
+        printf("\n");
+        divider();
+        printf("       ST5004CEM — Secure File Management System\n");
+        divider();
+        printf("\n");
+        printf("  1. Login\n");
+        printf("  2. Register\n");
+        printf("  0. Exit\n");
+        printf("\n");
+        input("Enter Choice: ", choice, sizeof(choice));
+
+        switch (choice[0]) {
+            case '1':
+                if (screen_login()) main_menu();
+                break;
+            case '2':
+                screen_register();
+                break;
+            case '0':
+                printf("\n  Goodbye.\n\n");
+                exit(0);
+            default:
+                printf(RED "\n  Invalid choice.\n" RESET);
+        }
+    }
+}
