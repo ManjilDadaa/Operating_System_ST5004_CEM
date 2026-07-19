@@ -1,0 +1,12 @@
+[2026-07-03 14:26:29] USER=anonymous      ACTION=LOGIN_FAIL     FILE=manjil
+[2026-07-03 14:26:34] USER=anonymous      ACTION=REGISTER       FILE=manjil
+[2026-07-03 14:26:39] USER=manjil         ACTION=LOGIN          FILE=-
+[2026-07-03 14:27:29] USER=manjil         ACTION=CREATE         FILE=manjil.txt
+[2026-07-03 14:27:48] USER=manjil         ACTION=READ           FILE=manjil.txt
+[2026-07-03 14:28:10] USER=manjil         ACTION=WRITE          FILE=manjil.txt
+[2026-07-03 14:28:16] USER=manjil         ACTION=READ           FILE=manjil.txt
+[2026-07-03 14:28:33] USER=manjil         ACTION=ENCRYPT        FILE=manjil.txt
+[2026-07-03 14:28:51] USER=manjil         ACTION=DECRYPT        FILE=manjil.txt.enc
+[2026-07-03 14:29:04] USER=manjil         ACTION=READ           FILE=manjil.txt.enc
+[2026-07-03 14:29:12] USER=manjil         ACTION=READ           FILE=manjil.txt.dec
+[2026-07-03 14:29:27] USER=manjil         ACTION=LOGOUT         FILE=-
